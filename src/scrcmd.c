@@ -53,6 +53,7 @@
 #include "window.h"
 #include "constants/event_objects.h"
 #include "constants/new_shop.h"
+#include "qol_field_moves.h" // qol_field_moves
 
 typedef u16 (*SpecialFunc)(void);
 typedef void (*NativeFunc)(void);
@@ -2432,3 +2433,14 @@ bool8 ScrFunc_hidefollower(struct ScriptContext *ctx) {
     // execute next script command with no delay
     return TRUE;
 }
+
+// Start qol_field_moves
+bool8 ScrCmd_checkpartylearnknowsfieldmove(struct ScriptContext *ctx)
+{
+    u16 machine = ScriptReadHalfword(ctx);
+
+    PartyHasMonLearnsKnowsFieldMove(machine);
+
+    return FALSE;
+}
+// End qol_field_moves

@@ -295,7 +295,7 @@ static const struct MenuAction sItemMenuActions[] = {
     [ACTION_GIVE_FAVOR_LADY]   = {gMenuText_Give2,    {ItemMenu_GiveFavorLady}},
     [ACTION_CONFIRM_QUIZ_LADY] = {gMenuText_Confirm,  {ItemMenu_ConfirmQuizLady}},
     [ACTION_SELECT_BUTTON]     = {sMenuText_Select,   {ItemMenu_RegisterSelect}},
-    [ACTION_L_BUTTON]          = {sMenuText_L,        {ItemMenu_RegisterLis}},
+    [ACTION_L_BUTTON]          = {sMenuText_L,        {ItemMenu_RegisterList}},
     [ACTION_DUMMY]             = {gText_EmptyString2, {NULL}}
 };
 
@@ -2145,7 +2145,7 @@ bool8 UseRegisteredKeyItemOnField(u8 button)
             PlayerFreeze();
             StopPlayerAvatar();
             gSpecialVar_ItemId = registeredItem;
-            taskId = CreateTask(ItemId_GetFieldFunc(registeredItem), 8);
+            taskId = CreateTask(GetItemFieldFunc(registeredItem), 8);
             gTasks[taskId].tUsingRegisteredKeyItem = TRUE;
             return TRUE;
         }

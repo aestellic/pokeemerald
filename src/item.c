@@ -932,3 +932,8 @@ u32 GetItemBpPrice(u16 itemId)
 {
     return gItems[SanitizeItemId(itemId)].bpPrice;
 }
+
+void ItemId_GetHoldEffectParam_Script()
+{
+    VarSet(VAR_RESULT, GetItemHoldEffectParam(VarGet(VAR_0x8004)));
+}

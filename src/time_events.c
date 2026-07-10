@@ -8,6 +8,7 @@
 #include "rtc.h"
 #include "script.h"
 #include "task.h"
+#include "pokemon_storage_system.h"
 
 static u32 GetMirageRnd(void)
 {
@@ -39,14 +40,34 @@ void UpdateMirageRnd(u16 days)
     SetMirageRnd(rnd);
 }
 
-bool8 IsMirageIslandPresent(void)
+bool32 IsMirageIslandPresent(void)
 {
-    u16 rnd = GetMirageRnd() >> 16;
-    int i;
+    u32 hi = gSaveBlock1Ptr->vars[VAR_MIRAGE_RND_H - VARS_START];
+    u32 lo = gSaveBlock1Ptr->vars[VAR_MIRAGE_RND_L - VARS_START];
+    u32 rnd = ((hi << 16) | lo) >> 16;
+    bool32 species;
+    u32 personality;
+    struct Pokemon * curMon = &gPlayerParty[0];
+    struct Pokemon * partyEnd = &gPlayerParty[PARTY_SIZE];
+    int box, slot;
 
-    for (i = 0; i < PARTY_SIZE; i++)
-        if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES) && (GetMonData(&gPlayerParty[i], MON_DATA_PERSONALITY) & 0xFFFF) == rnd)
+    do {
+        species = curMon->box.hasSpecies;
+        if (!species) 
+            break;
+        personality = curMon->box.personality & 0xFFFF;
+        if (personality == rnd)
             return TRUE;
+    } while (++curMon < partyEnd);
+
+    for (box = 0; box < TOTAL_BOXES_COUNT; box++) {
+        for (slot = 0; slot < IN_BOX_COUNT; slot++) {
+            if (GetBoxMonDataAt(box, slot, MON_DATA_SPECIES)) {
+                if ((GetBoxMonDataAt(box, slot, MON_DATA_PERSONALITY) & 0xFFFF) == rnd)
+                    return TRUE;
+            }
+        }
+    }
 
     return FALSE;
 }

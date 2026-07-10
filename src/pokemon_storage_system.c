@@ -2664,10 +2664,6 @@ static void Task_OnSelectedMon(u8 taskId)
             {
                 sStorage->state = 3;
             }
-            else if (sStorage->displayMonIsEgg)
-            {
-                sStorage->state = 5; // Cannot release an Egg.
-            }
             else if (ItemIsMail(sStorage->displayMonItemId))
             {
                 sStorage->state = 4;

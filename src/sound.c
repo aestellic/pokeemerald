@@ -7,6 +7,7 @@
 #include "pokemon.h"
 #include "constants/songs.h"
 #include "task.h"
+#include "global.h"
 
 struct Fanfare
 {
@@ -54,9 +55,13 @@ static const struct Fanfare sFanfares[] = {
     [FANFARE_REGISTER_MATCH_CALL] = { MUS_REGISTER_MATCH_CALL, 135 },
 };
 
+void Set_gDisableMusic(void) {
+    gDisableMusic = gSaveBlock2Ptr->optionsDisableMusic;
+}
+
 void InitMapMusic(void)
 {
-    gDisableMusic = FALSE;
+    Set_gDisableMusic();
     ResetMapMusic();
 }
 
@@ -114,6 +119,11 @@ void ResetMapMusic(void)
 u16 GetCurrentMapMusic(void)
 {
     return sCurrentMapMusic;
+}
+
+u16 GetNewMapMusic(void)
+{
+    return sNextMapMusic;
 }
 
 void PlayNewMapMusic(u16 songNum)
@@ -256,6 +266,7 @@ static void CreateFanfareTask(void)
 
 void FadeInNewBGM(u16 songNum, u8 speed)
 {
+    Set_gDisableMusic();
     if (gDisableMusic)
         songNum = 0;
     if (songNum == MUS_NONE)
@@ -561,6 +572,7 @@ static void RestoreBGMVolumeAfterPokemonCry(void)
 
 void PlayBGM(u16 songNum)
 {
+    Set_gDisableMusic();
     if (gDisableMusic)
         songNum = 0;
     if (songNum == MUS_NONE)

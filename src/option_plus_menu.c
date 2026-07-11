@@ -18,6 +18,9 @@
 #include "constants/rgb.h"
 #include "menu_helpers.h"
 #include "decompress.h"
+#include "sound.h"
+#include "overworld.h"
+#include "wild_encounter.h"
 
 enum
 {
@@ -46,6 +49,8 @@ enum
     MENUITEM_CUSTOM_EXP_BAR,
     MENUITEM_CUSTOM_FONT,
     MENUITEM_CUSTOM_MATCHCALL,
+    MENUITEM_CUSTOM_MUSIC,
+    MENUITEM_CUSTOM_WILD_ENC,
     MENUITEM_CUSTOM_CANCEL,
     MENUITEM_CUSTOM_COUNT,
 };
@@ -163,6 +168,8 @@ static int ProcessInput_Options_Three(int selection);
 static int ProcessInput_Options_Four(int selection);
 static int ProcessInput_Options_Eleven(int selection);
 static int ProcessInput_Sound(int selection);
+static int ProcessInput_Music(int selection);
+static int ProcessInput_WildEnc(int selection);
 static int ProcessInput_FrameType(int selection);
 static const u8 *const OptionTextDescription(void);
 static const u8 *const OptionTextRight(u8 menuItem);
@@ -182,6 +189,8 @@ static void DrawChoices_UnitSystem(int selection, int y);
 static void DrawChoices_Font(int selection, int y);
 static void DrawChoices_FrameType(int selection, int y);
 static void DrawChoices_MatchCall(int selection, int y);
+static void DrawChoices_Music(int selection, int y);
+static void DrawChoices_WildEnc(int selection, int y);
 static void DrawBgWindowFrames(void);
 
 // EWRAM vars
@@ -228,7 +237,7 @@ struct // MENU_MAIN
     [MENUITEM_MAIN_TEXTSPEED]    = {DrawChoices_TextSpeed,   ProcessInput_Options_Four},
     [MENUITEM_MAIN_BATTLESCENE]  = {DrawChoices_BattleScene, ProcessInput_Options_Two},
     [MENUITEM_MAIN_BATTLESTYLE]  = {DrawChoices_BattleStyle, ProcessInput_Options_Two},
-    [MENUITEM_MAIN_SOUND]        = {DrawChoices_Sound,       ProcessInput_Options_Two},
+    [MENUITEM_MAIN_SOUND]        = {DrawChoices_Sound,       ProcessInput_Sound},
     [MENUITEM_MAIN_BUTTONMODE]   = {DrawChoices_ButtonMode,  ProcessInput_Options_Three},
     [MENUITEM_MAIN_UNIT_SYSTEM]  = {DrawChoices_UnitSystem,  ProcessInput_Options_Two},
     [MENUITEM_MAIN_FRAMETYPE]    = {DrawChoices_FrameType,   ProcessInput_FrameType},
@@ -245,6 +254,8 @@ struct // MENU_CUSTOM
     [MENUITEM_CUSTOM_EXP_BAR]      = {DrawChoices_BarSpeed,    ProcessInput_Options_Eleven},
     [MENUITEM_CUSTOM_FONT]         = {DrawChoices_Font,        ProcessInput_Options_Two}, 
     [MENUITEM_CUSTOM_MATCHCALL]    = {DrawChoices_MatchCall,   ProcessInput_Options_Two},
+    [MENUITEM_CUSTOM_MUSIC]        = {DrawChoices_Music,       ProcessInput_Music},
+    [MENUITEM_CUSTOM_WILD_ENC]     = {DrawChoices_WildEnc,     ProcessInput_WildEnc},
     [MENUITEM_CUSTOM_CANCEL]       = {NULL, NULL},
 };
 
@@ -261,7 +272,7 @@ static const u8 *const sOptionMenuItemsNamesMain[MENUITEM_MAIN_COUNT] =
     [MENUITEM_MAIN_BUTTONMODE]  = gText_ButtonMode,
     [MENUITEM_MAIN_UNIT_SYSTEM] = sText_UnitSystem,
     [MENUITEM_MAIN_FRAMETYPE]   = gText_Frame,
-    [MENUITEM_MAIN_CANCEL]      = gText_OptionMenuSave,
+    [MENUITEM_MAIN_CANCEL]      = gText_OptionMenuExit,
 };
 
 static const u8 *const sOptionMenuItemsNamesCustom[MENUITEM_CUSTOM_COUNT] =
@@ -270,7 +281,9 @@ static const u8 *const sOptionMenuItemsNamesCustom[MENUITEM_CUSTOM_COUNT] =
     [MENUITEM_CUSTOM_EXP_BAR]     = sText_ExpBar,
     [MENUITEM_CUSTOM_FONT]        = gText_Font,
     [MENUITEM_CUSTOM_MATCHCALL]   = gText_OptionMatchCalls,
-    [MENUITEM_CUSTOM_CANCEL]      = gText_OptionMenuSave,
+    [MENUITEM_CUSTOM_MUSIC]       = gText_OptionMusic,
+    [MENUITEM_CUSTOM_WILD_ENC]    = gText_OptionWildEnc,
+    [MENUITEM_CUSTOM_CANCEL]      = gText_OptionMenuExit,
 };
 
 static const u8 *const OptionTextRight(u8 menuItem)
@@ -307,6 +320,8 @@ static bool8 CheckConditions(int selection)
         case MENUITEM_CUSTOM_EXP_BAR:         return TRUE;
         case MENUITEM_CUSTOM_FONT:            return TRUE;
         case MENUITEM_CUSTOM_MATCHCALL:       return TRUE;
+        case MENUITEM_CUSTOM_MUSIC:           return TRUE;
+        case MENUITEM_CUSTOM_WILD_ENC:        return TRUE;
         case MENUITEM_CUSTOM_CANCEL:          return TRUE;
         case MENUITEM_CUSTOM_COUNT:           return TRUE;
         }
@@ -315,7 +330,7 @@ static bool8 CheckConditions(int selection)
 
 // Descriptions
 static const u8 sText_Empty[]                   = _("");
-static const u8 sText_Desc_Save[]               = _("Save your settings.");
+static const u8 sText_Desc_Save[]               = _("Exit and save your settings.");
 static const u8 sText_Desc_TextSpeed[]          = _("Choose one of the four text-display\nspeeds.");
 static const u8 sText_Desc_BattleScene_On[]     = _("Show the POKéMON battle animations.");
 static const u8 sText_Desc_BattleScene_Off[]    = _("Skip the POKéMON battle animations.");
@@ -351,12 +366,18 @@ static const u8 sText_Desc_BikeOn[]             = _("Enables the BIKE theme when
 static const u8 sText_Desc_FontType[]           = _("Choose the font design.");
 static const u8 sText_Desc_OverworldCallsOn[]   = _("TRAINERs will be able to call you,\noffering rematches and info.");
 static const u8 sText_Desc_OverworldCallsOff[]  = _("You will not receive calls.\nSpecial events will still occur.");
+static const u8 sText_Desc_MusicOff[]           = _("Music will not play.");
+static const u8 sText_Desc_MusicOn[]            = _("Music will play normally.");
+static const u8 sText_Desc_WildEncOff[]         = _("Wild encounters will not occur.");
+static const u8 sText_Desc_WildEncOn[]          = _("Wild encounters will occur.");
 static const u8 *const sOptionMenuItemDescriptionsCustom[MENUITEM_CUSTOM_COUNT][2] =
 {
     [MENUITEM_CUSTOM_HP_BAR]      = {sText_Desc_BattleHPBar,        sText_Empty},
     [MENUITEM_CUSTOM_EXP_BAR]     = {sText_Desc_BattleExpBar,       sText_Empty},
     [MENUITEM_CUSTOM_FONT]        = {sText_Desc_FontType,           sText_Desc_FontType},
     [MENUITEM_CUSTOM_MATCHCALL]   = {sText_Desc_OverworldCallsOn,   sText_Desc_OverworldCallsOff},
+    [MENUITEM_CUSTOM_MUSIC]       = {sText_Desc_MusicOn,            sText_Desc_MusicOff},
+    [MENUITEM_CUSTOM_WILD_ENC]    = {sText_Desc_WildEncOn,          sText_Desc_WildEncOff},
     [MENUITEM_CUSTOM_CANCEL]      = {sText_Desc_Save,               sText_Empty},
 };
 
@@ -687,6 +708,8 @@ void CB2_InitOptionPlusMenu(void)
         sOptions->sel_custom[MENUITEM_CUSTOM_EXP_BAR]     = gSaveBlock2Ptr->optionsExpBarSpeed;
         sOptions->sel_custom[MENUITEM_CUSTOM_FONT]        = gSaveBlock2Ptr->optionsCurrentFont;
         sOptions->sel_custom[MENUITEM_CUSTOM_MATCHCALL]   = gSaveBlock2Ptr->optionsDisableMatchCall;
+        sOptions->sel_custom[MENUITEM_CUSTOM_MUSIC]       = gSaveBlock2Ptr->optionsDisableMusic;
+        sOptions->sel_custom[MENUITEM_CUSTOM_WILD_ENC]    = gSaveBlock2Ptr->optionsDisableWildEnc;
 
         sOptions->submenu = MENU_MAIN;
 
@@ -896,6 +919,8 @@ static void Task_OptionMenuSave(u8 taskId)
     gSaveBlock2Ptr->optionsExpBarSpeed      = sOptions->sel_custom[MENUITEM_CUSTOM_EXP_BAR];
     gSaveBlock2Ptr->optionsCurrentFont      = sOptions->sel_custom[MENUITEM_CUSTOM_FONT];
     gSaveBlock2Ptr->optionsDisableMatchCall = sOptions->sel_custom[MENUITEM_CUSTOM_MATCHCALL];
+    gSaveBlock2Ptr->optionsDisableMusic     = sOptions->sel_custom[MENUITEM_CUSTOM_MUSIC];
+    gSaveBlock2Ptr->optionsDisableWildEnc   = sOptions->sel_custom[MENUITEM_CUSTOM_WILD_ENC];
 
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, RGB_BLACK);
     gTasks[taskId].func = Task_OptionMenuFadeOut;
@@ -1072,6 +1097,36 @@ static int ProcessInput_FrameType(int selection)
         LoadBgTiles(1, GetWindowFrameTilesPal(selection)->tiles, 0x120, 0x1A2);
         LoadPalette(GetWindowFrameTilesPal(selection)->pal, 0x70, 0x20);
     }
+    return selection;
+}
+
+static int ProcessInput_Music(int selection)
+{
+    if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
+    {
+        selection ^= 1;
+    }
+
+    gSaveBlock2Ptr->optionsDisableMusic = selection;
+    Set_gDisableMusic();
+    
+    if (gDisableMusic)
+        FadeOutMapMusic(1);
+    else
+        FadeOutAndPlayNewMapMusic(GetCurrLocationDefaultMusic(), 8);
+
+    return selection;
+}
+
+static int ProcessInput_WildEnc(int selection)
+{
+    if (JOY_NEW(DPAD_LEFT | DPAD_RIGHT))
+    {
+        selection ^= 1;
+    }
+
+    DisableWildEncounters(selection);
+
     return selection;
 }
 
@@ -1267,6 +1322,25 @@ static void DrawChoices_MatchCall(int selection, int y)
     DrawOptionMenuChoice(gText_BattleSceneOff, GetStringRightAlignXOffset(1, gText_BattleSceneOff, 198), y, styles[1], active);
 }
 
+static void DrawChoices_Music(int selection, int y)
+{
+    bool8 active = CheckConditions(MENUITEM_CUSTOM_MUSIC);
+    u8 styles[2] = {0};
+    styles[selection] = 1;
+
+    DrawOptionMenuChoice(gText_BattleSceneOn, 104, y, styles[0], active);
+    DrawOptionMenuChoice(gText_BattleSceneOff, GetStringRightAlignXOffset(1, gText_BattleSceneOff, 198), y, styles[1], active);
+}
+
+static void DrawChoices_WildEnc(int selection, int y)
+{
+    bool8 active = CheckConditions(MENUITEM_CUSTOM_WILD_ENC);
+    u8 styles[2] = {0};
+    styles[selection] = 1;
+
+    DrawOptionMenuChoice(gText_BattleSceneOn, 104, y, styles[0], active);
+    DrawOptionMenuChoice(gText_BattleSceneOff, GetStringRightAlignXOffset(1, gText_BattleSceneOff, 198), y, styles[1], active);
+}
 
 // Background tilemap
 #define TILE_TOP_CORNER_L 0x1A2 // 418

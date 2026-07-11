@@ -492,16 +492,7 @@ static void SpriteCB_PokemonLogoShine(struct Sprite *sprite)
             }
 
             backgroundColor = _RGB(sprite->sBgColor, sprite->sBgColor, sprite->sBgColor);
-
-            // Flash the background green for 4 frames of movement.
-            // Otherwise use the updating color.
-            if (sprite->x == DISPLAY_WIDTH / 2 + (3 * SHINE_SPEED)
-             || sprite->x == DISPLAY_WIDTH / 2 + (4 * SHINE_SPEED)
-             || sprite->x == DISPLAY_WIDTH / 2 + (5 * SHINE_SPEED)
-             || sprite->x == DISPLAY_WIDTH / 2 + (6 * SHINE_SPEED))
-                gPlttBufferFaded[0] = RGB(24, 31, 12);
-            else
-                gPlttBufferFaded[0] = backgroundColor;
+            gPlttBufferFaded[0] = backgroundColor;
         }
 
         sprite->x += SHINE_SPEED;
@@ -658,7 +649,8 @@ void CB2_InitTitleScreen(void)
                                     | DISPCNT_OBJ_ON
                                     | DISPCNT_WIN0_ON
                                     | DISPCNT_OBJWIN_ON);
-        m4aSongNumStart(MUS_TITLE);
+        if (gSaveBlock2Ptr->optionsDisableMusic == 0)   //tx_optionsPlus
+            m4aSongNumStart(MUS_TITLE);
         gMain.state = 5;
         break;
     case 5:
@@ -813,7 +805,7 @@ static void Task_TitleScreenPhase3(u8 taskId)
             gBattle_BG1_X = 0;
         }
         UpdateLegendaryMarkingColor(gTasks[taskId].tCounter);
-        if ((gMPlayInfo_BGM.status & 0xFFFF) == 0)
+        if (((gMPlayInfo_BGM.status & 0xFFFF) == 0 && gSaveBlock2Ptr->optionsDisableMusic == 0) || JOY_NEW(B_BUTTON))
         {
             BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_WHITEALPHA);
             SetMainCallback2(CB2_GoToCopyrightScreen);
@@ -854,16 +846,63 @@ static void CB2_GoToBerryFixScreen(void)
     }
 }
 
+struct FadeColors
+{
+    u16 color1;
+    u16 color2;
+    u8 colorIndex;
+};
+
+#ifndef RHH_EXPANSION
+#define RGB2GBA(r, g, b) (((r >> 3) & 31) | (((g >> 3) & 31) << 5) | (((b >> 3) & 31) << 10))
+#endif
+
+static const struct FadeColors sFadeColors[] = {
+    {
+        .color1 = RGB2GBA(74, 82, 74),
+        .color2 = RGB2GBA(255, 255, 96),
+        .colorIndex = 15
+    }
+};
+
 static void UpdateLegendaryMarkingColor(u8 frameNum)
 {
     if ((frameNum % 4) == 0) // Change color every 4th frame
     {
-        s32 intensity = Cos(frameNum, 128) + 128;
-        s32 r = 31 - ((intensity * 32 - intensity) / 256);
-        s32 g = 31 - (intensity * 22 / 256);
-        s32 b = 12;
+        s32 intensity = (((Cos(frameNum, 128) + 128) * 10) / 250);
+        s32 r;
+        s32 g;
+        s32 b;
+        u16 color;
+        u32 i;
 
-        u16 color = RGB(r, g, b);
-        LoadPalette(&color, BG_PLTT_ID(14) + 15, sizeof(color));
-   }
+        for (i = 0; i < ARRAY_COUNT(sFadeColors); i++)
+        {
+            if (intensity == 0)
+            {
+                color = sFadeColors[i].color2;
+            }
+            else
+            {
+                if (GET_R(sFadeColors[i].color1) <= GET_R(sFadeColors[i].color2))
+                    r = (GET_R(sFadeColors[i].color2) - (((GET_R(sFadeColors[i].color2) - GET_R(sFadeColors[i].color1)) * intensity) / 10));
+                else
+                    r = (GET_R(sFadeColors[i].color2) + (((GET_R(sFadeColors[i].color1) - GET_R(sFadeColors[i].color2)) * intensity) / 10));
+
+                if (GET_G(sFadeColors[i].color1) <= GET_G(sFadeColors[i].color2))
+                    g = (GET_G(sFadeColors[i].color2) - (((GET_G(sFadeColors[i].color2) - GET_G(sFadeColors[i].color1)) * intensity) / 10));
+                else
+                    g = (GET_G(sFadeColors[i].color2) + (((GET_G(sFadeColors[i].color1) - GET_G(sFadeColors[i].color2)) * intensity) / 10));
+
+                if (GET_B(sFadeColors[i].color1) <= GET_B(sFadeColors[i].color2))
+                    b = (GET_B(sFadeColors[i].color2) - (((GET_B(sFadeColors[i].color2) - GET_B(sFadeColors[i].color1)) * intensity) / 10));
+                else
+                    b = (GET_B(sFadeColors[i].color2) + (((GET_B(sFadeColors[i].color1) - GET_B(sFadeColors[i].color2)) * intensity) / 10));
+
+                color = RGB(r, g, b);
+            }
+            
+            LoadPalette(&color, BG_PLTT_ID(14) + sFadeColors[i].colorIndex, sizeof(color));
+        }
+    }
 }

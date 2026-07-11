@@ -7,6 +7,7 @@ void InitMapMusic(void);
 void MapMusicMain(void);
 void ResetMapMusic(void);
 u16 GetCurrentMapMusic(void);
+u16 GetNewMapMusic(void);
 void PlayNewMapMusic(u16 songNum);
 void StopMapMusic(void);
 void FadeOutMapMusic(u8 speed);
@@ -45,5 +46,7 @@ void SE12PanpotControl(s8 pan);
 bool8 IsSEPlaying(void);
 bool8 IsBGMPlaying(void);
 bool8 IsSpecialSEPlaying(void);
+extern bool8 gDisableMusic;
+void Set_gDisableMusic(void);
 
 #endif // GUARD_SOUND_H

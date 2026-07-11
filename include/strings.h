@@ -321,7 +321,9 @@ extern const u8 gText_Font[];               //tx_optionsPlus
 extern const u8 gText_OptionFontFireRed[];  //tx_optionsPlus
 extern const u8 gText_OptionFontEmerald[];  //tx_optionsPlus
 extern const u8 gText_OptionMatchCalls[];   //tx_optionsPlus
-extern const u8 gText_OptionMenuSave[];
+extern const u8 gText_OptionMusic[];        //tx_optionsPlus
+extern const u8 gText_OptionWildEnc[];        //tx_optionsPlus
+extern const u8 gText_OptionMenuExit[];
 extern const u8 gText_ButtonMode[];
 
 extern const u8 gText_MaleSymbol[];

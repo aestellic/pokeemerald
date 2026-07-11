@@ -101,6 +101,8 @@ static void SetDefaultOptions(void)
     gSaveBlock2Ptr->optionsHpBarSpeed = 0;  //tx_optionsPlus
     gSaveBlock2Ptr->optionsExpBarSpeed = 0; //tx_optionsPlus
     gSaveBlock2Ptr->optionsDisableMatchCall = 0;    //tx_optionsPlus
+    gSaveBlock2Ptr->optionsDisableMusic = 0;    //tx_optionsPlus
+    gSaveBlock2Ptr->optionsDisableWildEnc = 0;    //tx_optionsPlus
     gSaveBlock2Ptr->optionsCurrentFont = 0;         //tx_optionsPlus
 }
 

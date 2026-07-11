@@ -21,6 +21,7 @@
 #include "sound.h"
 #include "overworld.h"
 #include "wild_encounter.h"
+#include "constants/overworld_speedup.h"
 
 enum
 {
@@ -51,6 +52,7 @@ enum
     MENUITEM_CUSTOM_MATCHCALL,
     MENUITEM_CUSTOM_MUSIC,
     MENUITEM_CUSTOM_WILD_ENC,
+    MENUITEM_CUSTOM_OVERWORLD_SPEED,
     MENUITEM_CUSTOM_CANCEL,
     MENUITEM_CUSTOM_COUNT,
 };
@@ -191,6 +193,7 @@ static void DrawChoices_FrameType(int selection, int y);
 static void DrawChoices_MatchCall(int selection, int y);
 static void DrawChoices_Music(int selection, int y);
 static void DrawChoices_WildEnc(int selection, int y);
+static void DrawChoices_OverworldSpeed(int selection, int y);
 static void DrawBgWindowFrames(void);
 
 // EWRAM vars
@@ -250,13 +253,14 @@ struct // MENU_CUSTOM
     int (*processInput)(int selection);
 } static const sItemFunctionsCustom[MENUITEM_CUSTOM_COUNT] =
 {
-    [MENUITEM_CUSTOM_HP_BAR]       = {DrawChoices_BarSpeed,    ProcessInput_Options_Eleven},
-    [MENUITEM_CUSTOM_EXP_BAR]      = {DrawChoices_BarSpeed,    ProcessInput_Options_Eleven},
-    [MENUITEM_CUSTOM_FONT]         = {DrawChoices_Font,        ProcessInput_Options_Two}, 
-    [MENUITEM_CUSTOM_MATCHCALL]    = {DrawChoices_MatchCall,   ProcessInput_Options_Two},
-    [MENUITEM_CUSTOM_MUSIC]        = {DrawChoices_Music,       ProcessInput_Music},
-    [MENUITEM_CUSTOM_WILD_ENC]     = {DrawChoices_WildEnc,     ProcessInput_WildEnc},
-    [MENUITEM_CUSTOM_CANCEL]       = {NULL, NULL},
+    [MENUITEM_CUSTOM_HP_BAR]                = {DrawChoices_BarSpeed,            ProcessInput_Options_Eleven},
+    [MENUITEM_CUSTOM_EXP_BAR]               = {DrawChoices_BarSpeed,            ProcessInput_Options_Eleven},
+    [MENUITEM_CUSTOM_FONT]                  = {DrawChoices_Font,                ProcessInput_Options_Two}, 
+    [MENUITEM_CUSTOM_MATCHCALL]             = {DrawChoices_MatchCall,           ProcessInput_Options_Two},
+    [MENUITEM_CUSTOM_MUSIC]                 = {DrawChoices_Music,               ProcessInput_Music},
+    [MENUITEM_CUSTOM_WILD_ENC]              = {DrawChoices_WildEnc,             ProcessInput_WildEnc},
+    [MENUITEM_CUSTOM_OVERWORLD_SPEED]       = {DrawChoices_OverworldSpeed,      ProcessInput_Options_Four},
+    [MENUITEM_CUSTOM_CANCEL]                = {NULL, NULL},
 };
 
 // Menu left side option names text
@@ -265,25 +269,26 @@ static const u8 sText_ExpBar[]      = _("EXP BAR");
 static const u8 sText_UnitSystem[]  = _("UNIT SYSTEM");
 static const u8 *const sOptionMenuItemsNamesMain[MENUITEM_MAIN_COUNT] =
 {
-    [MENUITEM_MAIN_TEXTSPEED]   = gText_TextSpeed,
-    [MENUITEM_MAIN_BATTLESCENE] = gText_BattleScene,
-    [MENUITEM_MAIN_BATTLESTYLE] = gText_BattleStyle,
-    [MENUITEM_MAIN_SOUND]       = gText_Sound,
-    [MENUITEM_MAIN_BUTTONMODE]  = gText_ButtonMode,
-    [MENUITEM_MAIN_UNIT_SYSTEM] = sText_UnitSystem,
-    [MENUITEM_MAIN_FRAMETYPE]   = gText_Frame,
-    [MENUITEM_MAIN_CANCEL]      = gText_OptionMenuExit,
+    [MENUITEM_MAIN_TEXTSPEED]               = gText_TextSpeed,
+    [MENUITEM_MAIN_BATTLESCENE]             = gText_BattleScene,
+    [MENUITEM_MAIN_BATTLESTYLE]             = gText_BattleStyle,
+    [MENUITEM_MAIN_SOUND]                   = gText_Sound,
+    [MENUITEM_MAIN_BUTTONMODE]              = gText_ButtonMode,
+    [MENUITEM_MAIN_UNIT_SYSTEM]             = sText_UnitSystem,
+    [MENUITEM_MAIN_FRAMETYPE]               = gText_Frame,
+    [MENUITEM_MAIN_CANCEL]                  = gText_OptionMenuExit,
 };
 
 static const u8 *const sOptionMenuItemsNamesCustom[MENUITEM_CUSTOM_COUNT] =
 {
-    [MENUITEM_CUSTOM_HP_BAR]      = sText_HpBar,
-    [MENUITEM_CUSTOM_EXP_BAR]     = sText_ExpBar,
-    [MENUITEM_CUSTOM_FONT]        = gText_Font,
-    [MENUITEM_CUSTOM_MATCHCALL]   = gText_OptionMatchCalls,
-    [MENUITEM_CUSTOM_MUSIC]       = gText_OptionMusic,
-    [MENUITEM_CUSTOM_WILD_ENC]    = gText_OptionWildEnc,
-    [MENUITEM_CUSTOM_CANCEL]      = gText_OptionMenuExit,
+    [MENUITEM_CUSTOM_HP_BAR]                = sText_HpBar,
+    [MENUITEM_CUSTOM_EXP_BAR]               = sText_ExpBar,
+    [MENUITEM_CUSTOM_FONT]                  = gText_Font,
+    [MENUITEM_CUSTOM_MATCHCALL]             = gText_OptionMatchCalls,
+    [MENUITEM_CUSTOM_MUSIC]                 = gText_OptionMusic,
+    [MENUITEM_CUSTOM_WILD_ENC]              = gText_OptionWildEnc,
+    [MENUITEM_CUSTOM_OVERWORLD_SPEED]       = gText_OptionOverworldSpeed,
+    [MENUITEM_CUSTOM_CANCEL]                = gText_OptionMenuExit,
 };
 
 static const u8 *const OptionTextRight(u8 menuItem)
@@ -322,6 +327,7 @@ static bool8 CheckConditions(int selection)
         case MENUITEM_CUSTOM_MATCHCALL:       return TRUE;
         case MENUITEM_CUSTOM_MUSIC:           return TRUE;
         case MENUITEM_CUSTOM_WILD_ENC:        return TRUE;
+        case MENUITEM_CUSTOM_OVERWORLD_SPEED: return TRUE;
         case MENUITEM_CUSTOM_CANCEL:          return TRUE;
         case MENUITEM_CUSTOM_COUNT:           return TRUE;
         }
@@ -370,15 +376,17 @@ static const u8 sText_Desc_MusicOff[]           = _("Music will not play.");
 static const u8 sText_Desc_MusicOn[]            = _("Music will play normally.");
 static const u8 sText_Desc_WildEncOff[]         = _("Wild encounters will not occur.");
 static const u8 sText_Desc_WildEncOn[]          = _("Wild encounters will occur.");
+static const u8 sText_Desc_OverworldSpeed[]     = _("Choose how fast the game is.\nHold R to temporarily revert speed.");
 static const u8 *const sOptionMenuItemDescriptionsCustom[MENUITEM_CUSTOM_COUNT][2] =
 {
-    [MENUITEM_CUSTOM_HP_BAR]      = {sText_Desc_BattleHPBar,        sText_Empty},
-    [MENUITEM_CUSTOM_EXP_BAR]     = {sText_Desc_BattleExpBar,       sText_Empty},
-    [MENUITEM_CUSTOM_FONT]        = {sText_Desc_FontType,           sText_Desc_FontType},
-    [MENUITEM_CUSTOM_MATCHCALL]   = {sText_Desc_OverworldCallsOn,   sText_Desc_OverworldCallsOff},
-    [MENUITEM_CUSTOM_MUSIC]       = {sText_Desc_MusicOn,            sText_Desc_MusicOff},
-    [MENUITEM_CUSTOM_WILD_ENC]    = {sText_Desc_WildEncOn,          sText_Desc_WildEncOff},
-    [MENUITEM_CUSTOM_CANCEL]      = {sText_Desc_Save,               sText_Empty},
+    [MENUITEM_CUSTOM_HP_BAR]                = {sText_Desc_BattleHPBar,        sText_Empty},
+    [MENUITEM_CUSTOM_EXP_BAR]               = {sText_Desc_BattleExpBar,       sText_Empty},
+    [MENUITEM_CUSTOM_FONT]                  = {sText_Desc_FontType,           sText_Desc_FontType},
+    [MENUITEM_CUSTOM_MATCHCALL]             = {sText_Desc_OverworldCallsOn,   sText_Desc_OverworldCallsOff},
+    [MENUITEM_CUSTOM_MUSIC]                 = {sText_Desc_MusicOn,            sText_Desc_MusicOff},
+    [MENUITEM_CUSTOM_WILD_ENC]              = {sText_Desc_WildEncOn,          sText_Desc_WildEncOff},
+    [MENUITEM_CUSTOM_OVERWORLD_SPEED]       = {sText_Desc_OverworldSpeed,     sText_Empty},
+    [MENUITEM_CUSTOM_CANCEL]                = {sText_Desc_Save,               sText_Empty},
 };
 
 // Disabled Descriptions
@@ -424,7 +432,7 @@ static const u8 *const OptionTextDescription(void)
         if (!CheckConditions(menuItem))
             return sOptionMenuItemDescriptionsDisabledMain[menuItem];
         selection = sOptions->sel_custom[menuItem];
-        if (menuItem == MENUITEM_CUSTOM_HP_BAR || menuItem == MENUITEM_CUSTOM_EXP_BAR)
+        if (menuItem == MENUITEM_CUSTOM_HP_BAR || menuItem == MENUITEM_CUSTOM_EXP_BAR || menuItem == MENUITEM_CUSTOM_OVERWORLD_SPEED)
             selection = 0;
         return sOptionMenuItemDescriptionsCustom[menuItem][selection];
     }
@@ -696,20 +704,21 @@ void CB2_InitOptionPlusMenu(void)
         gMain.state++;
         break;
     case 6:
-        sOptions->sel[MENUITEM_MAIN_TEXTSPEED]   = gSaveBlock2Ptr->optionsTextSpeed;
-        sOptions->sel[MENUITEM_MAIN_BATTLESCENE] = gSaveBlock2Ptr->optionsBattleSceneOff;
-        sOptions->sel[MENUITEM_MAIN_BATTLESTYLE] = gSaveBlock2Ptr->optionsBattleStyle;
-        sOptions->sel[MENUITEM_MAIN_SOUND]       = gSaveBlock2Ptr->optionsSound;
-        sOptions->sel[MENUITEM_MAIN_BUTTONMODE]  = gSaveBlock2Ptr->optionsButtonMode;
-        sOptions->sel[MENUITEM_MAIN_UNIT_SYSTEM] = gSaveBlock2Ptr->optionsUnitSystem;
-        sOptions->sel[MENUITEM_MAIN_FRAMETYPE]   = gSaveBlock2Ptr->optionsWindowFrameType;
+        sOptions->sel[MENUITEM_MAIN_TEXTSPEED]                      = gSaveBlock2Ptr->optionsTextSpeed;
+        sOptions->sel[MENUITEM_MAIN_BATTLESCENE]                    = gSaveBlock2Ptr->optionsBattleSceneOff;
+        sOptions->sel[MENUITEM_MAIN_BATTLESTYLE]                    = gSaveBlock2Ptr->optionsBattleStyle;
+        sOptions->sel[MENUITEM_MAIN_SOUND]                          = gSaveBlock2Ptr->optionsSound;
+        sOptions->sel[MENUITEM_MAIN_BUTTONMODE]                     = gSaveBlock2Ptr->optionsButtonMode;
+        sOptions->sel[MENUITEM_MAIN_UNIT_SYSTEM]                    = gSaveBlock2Ptr->optionsUnitSystem;
+        sOptions->sel[MENUITEM_MAIN_FRAMETYPE]                      = gSaveBlock2Ptr->optionsWindowFrameType;
         
-        sOptions->sel_custom[MENUITEM_CUSTOM_HP_BAR]      = gSaveBlock2Ptr->optionsHpBarSpeed;
-        sOptions->sel_custom[MENUITEM_CUSTOM_EXP_BAR]     = gSaveBlock2Ptr->optionsExpBarSpeed;
-        sOptions->sel_custom[MENUITEM_CUSTOM_FONT]        = gSaveBlock2Ptr->optionsCurrentFont;
-        sOptions->sel_custom[MENUITEM_CUSTOM_MATCHCALL]   = gSaveBlock2Ptr->optionsDisableMatchCall;
-        sOptions->sel_custom[MENUITEM_CUSTOM_MUSIC]       = gSaveBlock2Ptr->optionsDisableMusic;
-        sOptions->sel_custom[MENUITEM_CUSTOM_WILD_ENC]    = gSaveBlock2Ptr->optionsDisableWildEnc;
+        sOptions->sel_custom[MENUITEM_CUSTOM_HP_BAR]                = gSaveBlock2Ptr->optionsHpBarSpeed;
+        sOptions->sel_custom[MENUITEM_CUSTOM_EXP_BAR]               = gSaveBlock2Ptr->optionsExpBarSpeed;
+        sOptions->sel_custom[MENUITEM_CUSTOM_FONT]                  = gSaveBlock2Ptr->optionsCurrentFont;
+        sOptions->sel_custom[MENUITEM_CUSTOM_MATCHCALL]             = gSaveBlock2Ptr->optionsDisableMatchCall;
+        sOptions->sel_custom[MENUITEM_CUSTOM_MUSIC]                 = gSaveBlock2Ptr->optionsDisableMusic;
+        sOptions->sel_custom[MENUITEM_CUSTOM_WILD_ENC]              = gSaveBlock2Ptr->optionsDisableWildEnc;
+        sOptions->sel_custom[MENUITEM_CUSTOM_OVERWORLD_SPEED]       = gSaveBlock2Ptr->optionsOverworldSpeed;
 
         sOptions->submenu = MENU_MAIN;
 
@@ -921,6 +930,7 @@ static void Task_OptionMenuSave(u8 taskId)
     gSaveBlock2Ptr->optionsDisableMatchCall = sOptions->sel_custom[MENUITEM_CUSTOM_MATCHCALL];
     gSaveBlock2Ptr->optionsDisableMusic     = sOptions->sel_custom[MENUITEM_CUSTOM_MUSIC];
     gSaveBlock2Ptr->optionsDisableWildEnc   = sOptions->sel_custom[MENUITEM_CUSTOM_WILD_ENC];
+    gSaveBlock2Ptr->optionsOverworldSpeed   = sOptions->sel_custom[MENUITEM_CUSTOM_OVERWORLD_SPEED];
 
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 0x10, RGB_BLACK);
     gTasks[taskId].func = Task_OptionMenuFadeOut;
@@ -1340,6 +1350,34 @@ static void DrawChoices_WildEnc(int selection, int y)
 
     DrawOptionMenuChoice(gText_BattleSceneOn, 104, y, styles[0], active);
     DrawOptionMenuChoice(gText_BattleSceneOff, GetStringRightAlignXOffset(1, gText_BattleSceneOff, 198), y, styles[1], active);
+}
+
+static const u8 sOverworldSpeed_Normal[]  = _("NORMAL");
+static const u8 sOverworldSpeed_Fast[]    = _("FAST");
+static const u8 sOverworldSpeed_Faster[]  = _("FASTER");
+static const u8 sOverworldSpeed_Lightning[]  = _("MCQUEEN");
+static const u8 sOverworldSpeed_Error[]  = _("error");
+//static const u8 *const sOverworldSpeedStrings[] = {sOverworldSpeed_Normal, sOverworldSpeed_Fast, sOverworldSpeed_Faster, sOverworldSpeed_Lightning};
+static void DrawChoices_OverworldSpeed(int selection, int y)
+{
+    bool8 active = CheckConditions(MENUITEM_CUSTOM_OVERWORLD_SPEED);
+
+    switch (selection) {
+        case OPTIONS_OVERWORLD_SPEED_1X:
+            DrawOptionMenuChoice(sOverworldSpeed_Normal, 104, y, 1, active);
+            break;
+        case OPTIONS_OVERWORLD_SPEED_2X:
+            DrawOptionMenuChoice(sOverworldSpeed_Fast, 104, y, 1, active);
+            break;
+        case OPTIONS_OVERWORLD_SPEED_4X:
+            DrawOptionMenuChoice(sOverworldSpeed_Faster, 104, y, 1, active);
+            break;
+        case OPTIONS_OVERWORLD_SPEED_8X:
+            DrawOptionMenuChoice(sOverworldSpeed_Lightning, 104, y, 1, active);
+            break;
+        default:
+            DrawOptionMenuChoice(sOverworldSpeed_Error, 104, y, 1, active);
+    }
 }
 
 // Background tilemap

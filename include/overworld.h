@@ -174,5 +174,6 @@ bool32 IsSendingKeysOverCable(void);
 void ClearLinkPlayerObjectEvents(void);
 bool16 SetTimeOfDay(u16 hours);
 void CB2_ReturnToFullScreenStartMenu(void);
+u8 OverworldSpeedup_AdditionalIterations(u16 speed, bool32 overworld);
 
 #endif // GUARD_OVERWORLD_H

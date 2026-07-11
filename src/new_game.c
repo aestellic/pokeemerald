@@ -103,6 +103,7 @@ static void SetDefaultOptions(void)
     gSaveBlock2Ptr->optionsDisableMatchCall = 0;    //tx_optionsPlus
     gSaveBlock2Ptr->optionsDisableMusic = 0;    //tx_optionsPlus
     gSaveBlock2Ptr->optionsDisableWildEnc = 0;    //tx_optionsPlus
+    gSaveBlock2Ptr->optionsOverworldSpeed = 0;    //tx_optionsPlus
     gSaveBlock2Ptr->optionsCurrentFont = 0;         //tx_optionsPlus
 }
 

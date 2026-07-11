@@ -343,7 +343,6 @@ SECTIONS {
         src/ui_startmenu_full.o(.text);
         src/ui_main_menu.o(.text);
         src/new_shop.o(.text);
-        src/tx_registered_items_menu.o(.text);
     } > ROM =0
 
     script_data :
@@ -709,7 +708,6 @@ SECTIONS {
         data/sound_data.o(.rodata);
         src/ui_main_menu.o(.rodata);
         src/new_shop.o(.rodata);
-        src/tx_registered_items_menu.o(.rodata);
     } > ROM =0
 
     song_data :

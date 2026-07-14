@@ -2620,7 +2620,7 @@ static void CreateDomeOpponentMons(u16 tournamentTrainerId)
 
     ZeroEnemyPartyMons();
     selectedMonBits = GetDomeTrainerSelectedMons(tournamentTrainerId);
-    otId = Random32(&gPCGRng);
+    otId = Random32();
 
     if (Random() % 10 > 5)
     {
@@ -5256,7 +5256,7 @@ static u16 GetWinningMove(int winnerTournamentId, int loserTournamentId, u8 roun
                 u16 targetAbility = ABILITY_NONE;
                 do
                 {
-                    var = Random32(&gPCGRng);
+                    var = Random32();
                 } while (gFacilityTrainerMons[DOME_MONS[loserTournamentId][k]].nature != GetNatureFromPersonality(var));
 
                 targetSpecies = gFacilityTrainerMons[DOME_MONS[loserTournamentId][k]].species;

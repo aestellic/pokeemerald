@@ -1,15 +1,8 @@
 #ifndef GUARD_RANDOM_H
 #define GUARD_RANDOM_H
 
-struct PCG32
-{
-    u32 seed;
-    u32 low;
-    u32 high;
-};
-
-extern struct PCG32 gPCGRng;
-extern struct PCG32 gPCGRng2;
+extern u32 gRngValue;
+extern u32 gRng2Value;
 
 //Returns a 16-bit pseudorandom number
 u16 Random(void);
@@ -17,7 +10,7 @@ u16 Random2(void);
 u8 RandomWeightedIndex(u8 *weights, u8 length);
 
 //Returns a 32-bit pseudorandom number
-u32 Random32(struct PCG32 * PCGRng);
+#define Random32() (Random() | (Random() << 16))
 
 // The number 1103515245 comes from the example implementation of rand and srand
 // in the ISO C standard.
@@ -25,13 +18,7 @@ u32 Random32(struct PCG32 * PCGRng);
 #define ISO_RANDOMIZE2(val) (1103515245 * (val) + 12345)
 
 //Sets the initial seed value of the pseudorandom number generator
-void SeedRng(u32 seed);
-void SeedRng2(u32 seed);
-
-static inline u16 Random16(struct PCG32 * PCGRng)
-{
-    u32 result = Random32(PCGRng);
-    return result ^ (result >> 16);
-}
+void SeedRng(u16 seed);
+void SeedRng2(u16 seed);
 
 #endif // GUARD_RANDOM_H

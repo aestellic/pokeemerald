@@ -2656,8 +2656,8 @@ static void PlayerChooseMoveInBattlePalace(void)
 {
     if (--*(gBattleStruct->arenaMindPoints + gActiveBattler) == 0)
     {
-        gBattlePalaceMoveSelectionRngValue = gPCGRng;
-        BtlController_EmitTwoReturnValues(B_COMM_TO_ENGINE, B_ACTION_EXEC_SCRIPT, ChooseMoveAndTargetInBattlePalace());
+        gBattlePalaceMoveSelectionRngValue = gRngValue;
+        BtlController_EmitTwoReturnValues(B_COMM_TO_ENGINE, 10, ChooseMoveAndTargetInBattlePalace());
         PlayerBufferExecCompleted();
     }
 }

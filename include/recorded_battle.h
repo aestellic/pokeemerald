@@ -1,10 +1,8 @@
 #ifndef GUARD_RECORDED_BATTLE_H
 #define GUARD_RECORDED_BATTLE_H
 
-#include "random.h"
-
-extern struct PCG32 gRecordedBattleRngSeed;
-extern struct PCG32 gBattlePalaceMoveSelectionRngValue;
+extern u32 gRecordedBattleRngSeed;
+extern u32 gBattlePalaceMoveSelectionRngValue;
 extern u8 gRecordedBattleMultiplayerId;
 
 #define B_RECORD_MODE_RECORDING 1

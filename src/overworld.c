@@ -1935,6 +1935,9 @@ void CB2_ContinueSavedGame(void)
     ScriptContext_Init();
     UnlockPlayerFieldControls();
     InitMatchCallCounters();
+
+    DisableWildEncounters(gSaveBlock2Ptr->optionsDisableWildEnc);
+
     if (UseContinueGameWarp() == TRUE)
     {
         ClearContinueGameWarpStatus();
